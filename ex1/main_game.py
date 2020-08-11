@@ -4,7 +4,7 @@
 ##
 
 # from histogram_mine import *
-from histogram_mine import *
+from histogram_game import *
 
 
 def main():
