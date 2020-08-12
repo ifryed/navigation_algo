@@ -1,62 +1,71 @@
-##
-# Main function of the Python program.
-#
-##
 import numpy as np
-from math import *
 from numpy.linalg import inv
 
-dt = 0.01
-P = np.eye(4)
-F = np.array([
-    [1, 0, dt, 0],
-    [0, 1, 0, dt],
-    [0, 0, 1, 0],
-    [0, 0, 0, 1],
+kFEET2METER = 0.3058
+
+sen_pos_sig = 0.5 * kFEET2METER
+sen_v_sig = 4
+R_0 = np.array([
+    [np.square(sen_pos_sig), sen_pos_sig * sen_v_sig],
+    [sen_pos_sig * sen_v_sig, np.square(sen_pos_sig)],
 ])
-B = np.array([
-    [dt ** 2 / 2],
-    [dt ** 2 / 2],
-    [dt],
-    [dt]
+dt = 1
+P_0 = np.array([
+    [np.square(sen_pos_sig), sen_pos_sig * sen_v_sig],
+    [sen_pos_sig * sen_v_sig, np.square(sen_pos_sig)],
 ])
-H = np.array([
-    [1, 0, 0, 0],
-    [0, 1, 0, 0],
+F_0 = np.array([
+    [1, dt],
+    [0, 1]
 ])
-R = np.zeros(2)
-I = np.eye(4)
-Q = B.dot(B.T)
+H_0 = np.array([
+    [1, 0],
+    [0, 1],
+])
 
 
-def filter(x, P, u, measurements):
+def kalman_filter(x: np.ndarray, P: np.ndarray, H: np.ndarray, F: np.ndarray, R: np.ndarray, measurements: list) -> (
+        np.ndarray, np.ndarray):
+    """
+    Performs Kalman Filter estimation
+    :param x: Initial status (position,velocity)
+    :param P: The a posteriori estimate covariance
+    :param H: The observation model
+    :param F: The state-transition model
+    :param R: The covariance of the observation noise
+    :param measurements: The sensor readings at each :math:'\delta t' interval (position reading,velocity reading)
+    :return:
+    """
+
     for n in range(len(measurements)):
-        # prediction
-        x = F.dot(x) + B * (u)
-        P = F.dot(P.dot(F.T)) + Q * 0
+        # Stage I: Prediction
+        x = F.dot(x)
+        P = F.dot(P.dot(F.T))
 
-        # measurement update
+        # Stage II: Measurement reading & Update
         Z = measurements[n]
-        print(Z, x.flatten())
-        # y =
-        # S =
-        K = P.dot(H.T.dot(inv(H.dot(P.dot(H.T)) - R)))
+        Z = np.array(Z).reshape(-1, 1)
+
+        K = P.dot(H.T).dot(np.linalg.inv(H.dot(P.dot(H.T)) + R))
         x = x + K.dot(Z - H.dot(x))
         P = (1 - K.dot(H)).dot(P)
 
-    print('x= ', x)
-    print('P= ', P)
-    return P
+    return x, P
 
 
 def main():
-    # we print a heading and make it bigger using HTML formatting
-    initial_xy = [2., 10.]
-    x = np.array([[initial_xy[0]], [initial_xy[1]], [0.], [0.]])  # initial state (location and velocity)
-    measurements = [[5., 10.], [6., 8.], [7., 6.], [8., 4.], [9., 2.], [10., 0.]]
-    u = np.array([[0.], [0.], [0.], [0.]])
-    P2 = filter(x, P, u, measurements)
-    print(P2[0][0])
+    initial_xy = np.array([8., 5.])  # Initial state (Position and Velocity)
+    measurements = [[43 * kFEET2METER, 4],
+                    [43 * kFEET2METER + 5, 6],
+                    [43 * kFEET2METER + 11, 6],
+                    ]
+
+    print('Initial Status:\t{}'.format(initial_xy))
+    print('Measurments:\t{}'.format('\n\t\t\t\t'.join(['[{:.3f},{}]'.format(*x) for x in measurements])))
+
+    x2, P2 = kalman_filter(initial_xy, P_0, H_0, F_0, R_0, measurements)
+    print('x= ', x2)
+    print('P= ', P2)
 
 
 if __name__ == '__main__':
