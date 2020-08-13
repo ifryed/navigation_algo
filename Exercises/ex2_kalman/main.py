@@ -54,13 +54,14 @@ def kalman_filter(x: np.ndarray, P: np.ndarray, H: np.ndarray, F: np.ndarray, R:
 
 
 def main():
-    initial_xy = np.array([8., 5.])  # Initial state (Position and Velocity)
+    initial_xy = np.array([[8.],  # Initial state (Position and Velocity)
+                           [5.]])
     measurements = [[43 * kFEET2METER, 4],
                     [43 * kFEET2METER + 5, 6],
                     [43 * kFEET2METER + 11, 6],
                     ]
 
-    print('Initial Status:\t{}'.format(initial_xy))
+    print('Initial Status:\t{}'.format(initial_xy.T[0]))
     print('Measurments:\t{}'.format('\n\t\t\t\t'.join(['[{:.3f},{}]'.format(*x) for x in measurements])))
 
     x2, P2 = kalman_filter(initial_xy, P_0, H_0, F_0, R_0, measurements)
