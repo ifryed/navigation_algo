@@ -1,7 +1,7 @@
 
 # Ex 2  
 ## Q1  
-Given an agent with varying location and speed, where both are in one dimesion only.  
+Given an agent with varying location and speed, where both are in one dimension only.  
 The movement model is a constant speed model.  
 The initial location error is $2$ meters, and the initial speed error is $1.2$ feet($1$ feet = $0.3048$ meter).  
 The sensor measures only the location, and its accuracy is a Gaussian distribution with a variance of $0.5$ feet.  
