@@ -6,4 +6,5 @@ I will share my solutions to the online course mini-code questions in [Classes](
 and the solution for each exercise in [Exercises](https://github.com/ifryed/navigation_algo/tree/master/Exercises).
 
 If you find any mistake feel free to contact me.
+
 Shai Aharon shai1.aharon@msmail.ariel.ac.il 
