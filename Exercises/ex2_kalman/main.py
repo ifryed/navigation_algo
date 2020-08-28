@@ -52,7 +52,7 @@ def kalman_filter(x: np.ndarray, P: np.ndarray, H: np.ndarray, F: np.ndarray, R:
 
         K = P.dot(H.T).dot(np.linalg.inv(H.dot(P.dot(H.T)) + R))
         x = x + K.dot(Z - H.dot(x))
-        P = (1 - K.dot(H)).dot(P)
+        P = (np.eye(len(x)) - K.dot(H)).dot(P)
 
     return x, P
 
