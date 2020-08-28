@@ -9,35 +9,41 @@ LIDAR_HEADER = 'sensor_type,x_measured,y_measured,timestamp,' \
                'vy_groundtruth,yaw_groundtruth,yawrate_groundtruth'.split(',')
 
 
+def RMSE(a, b):
+    return np.sqrt(np.square(a - b).mean())
+
+
+def calF(state: np.ndarray, dt: float = 1.0) -> np.ndarray:
+    x, y, vx, vy = state.flatten()
+    heading = np.arctan2(vy, vx)
+    d = np.sqrt(np.square(x) + np.square(y))
+
+
 def kalmanFilter(state: np.ndarray, P: np.ndarray, R: np.ndarray,
-                 F: np.ndarray, H: np.ndarray, measurment: np.ndarray) -> (np.ndarray, np.ndarray):
+                 F: np.ndarray, H: np.ndarray, measurment: np.ndarray, dt: float = 1) -> (np.ndarray, np.ndarray):
     # Stage I: Predict
     x = F.dot(state)
     P = F.dot(P.dot(F.T))
 
     # Stage II: Update
     K = P.dot(H.T).dot(
-        np.linalg.inv(
+        np.linalg.pinv(
             H.dot(P.dot(H.T)) + R
         )
     )
 
     state_out = x + K.dot(measurment - H.dot(x))
-    P_out = (1 - K.dot(H)).dot(P)
+    P_out = (1 - K.dot(H)).dot(P) * 2
 
     return state_out, P_out
 
 
-def RMSE(a, b):
-    return np.sqrt(np.square(a - b).sum())
-
-
 def main():
-    init_state = np.array([5,  # Pos X
-                           5,  # Pos Y
-                           0,  # Vel X
-                           0])  # Vel y
-    init_p = np.eye(4) * 12
+    init_state = np.array([[5,  # Pos X
+                            5,  # Pos Y
+                            0,  # Vel X
+                            0]]).T  # Vel y
+    init_p = np.diag([12, 12, 12, 12])
     F = lambda dt: np.array([
         [1, 0, dt, 0],
         [0, 1, 0, dt],
@@ -60,12 +66,12 @@ def main():
 
     last_dt = data.iloc[0]['timestamp'] - MS2SEC
     for data_line in data.iterrows():
-        meas = np.array([
+        meas = np.array([[
             data_line[1]['x_measured'],
-            data_line[1]['y_measured']])
-        gt = np.array([
+            data_line[1]['y_measured']]]).T
+        gt = np.array([[
             data_line[1]['x_groundtruth'],
-            data_line[1]['y_groundtruth']])
+            data_line[1]['y_groundtruth']]]).T
 
         dt = data_line[1]['timestamp'] - last_dt
         dt /= MS2SEC
