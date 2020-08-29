@@ -2,7 +2,7 @@ import numpy as np
 from typing import Callable
 
 
-class ExtendtedKalmanFilter:
+class ExtendedKalmanFilter:
     def __init__(self, init_state: np.ndarray, init_p: np.ndarray, R: np.ndarray, H: np.ndarray):
         self.state = init_state
         self.P = init_p

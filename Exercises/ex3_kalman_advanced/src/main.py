@@ -3,7 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from kalmanLib import ExtendtedKalmanFilter
+from kalmanLib import ExtendedKalmanFilter
 import time
 
 MS2SEC = 100000
@@ -59,7 +59,7 @@ def main():
     data = pd.read_csv(DATA_PATH, sep='\t', header=None, comment='R', names=LIDAR_HEADERS)
     print("Data sample\n", data.head())
 
-    ekf = ExtendtedKalmanFilter(init_state, init_p, R, H)
+    ekf = ExtendedKalmanFilter(init_state, init_p, R, H)
 
     last_dt = data.iloc[0]['timestamp'] - MS2SEC
 
