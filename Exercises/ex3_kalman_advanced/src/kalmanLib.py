@@ -3,12 +3,13 @@ from typing import Callable
 
 
 class ExtendedKalmanFilter:
-    def __init__(self, init_state: np.ndarray, init_p: np.ndarray, R: np.ndarray, H: np.ndarray):
+    def __init__(self, init_state: np.ndarray, init_p: np.ndarray, R: np.ndarray, H: np.ndarray,Q=0):
         self.state = init_state
         self.P = init_p
         self.R = R
         self.H = H
         self.I = np.eye(len(self.state))
+        self.Q = Q
 
     def _extractState(self) -> (float, float, float, float, float, float):
         x, y, vx, vy = self.state.flatten()
@@ -28,7 +29,7 @@ class ExtendedKalmanFilter:
     def predict(self, dt: float):
         f_mat = self._createFMatrix(dt)
         self.state = f_mat.dot(self.state)
-        self.P = f_mat.dot(self.P).dot(f_mat.T)
+        self.P = f_mat.dot(self.P).dot(f_mat.T) + self.Q
 
     def update(self, measurment: np.ndarray):
         K = self.P.dot(self.H.T).dot(

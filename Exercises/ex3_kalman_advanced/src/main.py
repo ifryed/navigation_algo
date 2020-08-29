@@ -59,7 +59,8 @@ def main():
     data = pd.read_csv(DATA_PATH, sep='\t', header=None, comment='R', names=LIDAR_HEADERS)
     print("Data sample\n", data.head())
 
-    ekf = ExtendedKalmanFilter(init_state, init_p, R, H)
+    Q = np.diag([.0001] * len(init_p))
+    ekf = ExtendedKalmanFilter(init_state, init_p, R, H, Q)
 
     last_dt = data.iloc[0]['timestamp'] - MS2SEC
 
@@ -80,7 +81,7 @@ def main():
         error_log.append(rmse)
         logger.write('{}:{:3f}\n'.format(i, rmse))
 
-        if i%5 ==0:
+        if i % 5 == 0:
             logger.flush()
 
         updatePlot(gt, meas, state, rmse)
