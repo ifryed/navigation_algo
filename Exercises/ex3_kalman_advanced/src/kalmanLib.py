@@ -26,10 +26,12 @@ class ExtendedKalmanFilter:
         ])
         return f_mat
 
-    def predict(self, dt: float):
+    def predict(self, dt: float)-> (np.ndarray,np.ndarray):
         f_mat = self._createFMatrix(dt)
         self.state = f_mat.dot(self.state)
         self.P = f_mat.dot(self.P).dot(f_mat.T) + self.Q
+
+        return self.state, self.P
 
     def update(self, measurment: np.ndarray):
         K = self.P.dot(self.H.T).dot(

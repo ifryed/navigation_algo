@@ -59,7 +59,7 @@ def main():
     data = pd.read_csv(DATA_PATH, sep='\t', header=None, comment='R', names=LIDAR_HEADERS)
     print("Data sample\n", data.head())
 
-    Q = np.diag([.0001] * len(init_p))
+    Q = np.diag([.001] * len(init_p))
     ekf = ExtendedKalmanFilter(init_state, init_p, R, H, Q)
 
     last_dt = data.iloc[0]['timestamp'] - MS2SEC
@@ -74,8 +74,8 @@ def main():
         dt = (time_stamp - last_dt) / MS2MIN
         last_dt = time_stamp
 
-        ekf.predict(dt)
-        state, new_p = ekf.update(meas)
+        state, new_p = ekf.predict(dt)
+        ekf.update(meas)
 
         rmse = RMSE(state[:2], gt[:2])
         error_log.append(rmse)
