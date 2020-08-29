@@ -6,26 +6,25 @@ import pandas as pd
 from kalmanLib import ExtendedKalmanFilter
 import time
 
-MS2SEC = 100000
-MS2MIN = 60 * MS2SEC
 DATA_PATH = '../data/obj_pose-laser-radar-synthetic-input.txt'
 LIDAR_HEADERS = 'sensor_type,x_measured,y_measured,timestamp,' \
                 'x_groundtruth,y_groundtruth,vx_groundtruth,' \
                 'vy_groundtruth,yaw_groundtruth,yawrate_groundtruth'.split(',')
 
 
-def RMSE(a, b):
-    return np.sqrt(np.square(a - b).mean())
+def RMSE(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    return np.sqrt(np.square(a - b)).flatten()
 
 
-def updatePlot(gt: np.ndarray, meas: np.ndarray, state: np.ndarray, rmse: float) -> None:
+def updatePlot(gt: np.ndarray, meas: np.ndarray, state: np.ndarray, rmse: np.ndarray, disp_on=True) -> None:
     # Plot
     plt.plot(gt[0], gt[1], 'g*')
     plt.plot(meas[0], meas[1], 'ro')
     plt.plot(state[0], state[1], 'b*')
     plt.legend(['GT', 'Meas', 'KF'], loc=2)
-    plt.title("RMSE {:.3f}".format(rmse))
-    plt.pause(.01)
+    plt.title("RMSE x={:.3},y={:.3},vx={:.3},vy={:.3}".format(*rmse))
+    if disp_on:
+        plt.pause(.01)
 
 
 def extractDataLine(data_line: pd.DataFrame) -> (np.ndarray, np.ndarray, float):
@@ -34,7 +33,10 @@ def extractDataLine(data_line: pd.DataFrame) -> (np.ndarray, np.ndarray, float):
         data_line[1]['y_measured']]]).T
     gt = np.array([[
         data_line[1]['x_groundtruth'],
-        data_line[1]['y_groundtruth']]]).T
+        data_line[1]['y_groundtruth'],
+        data_line[1]['vx_groundtruth'],
+        data_line[1]['vy_groundtruth'],
+    ]]).T
 
     time_stamp = data_line[1]['timestamp']
 
@@ -59,10 +61,9 @@ def main():
     data = pd.read_csv(DATA_PATH, sep='\t', header=None, comment='R', names=LIDAR_HEADERS)
     print("Data sample\n", data.head())
 
-    Q = np.diag([.001] * len(init_p))
-    ekf = ExtendedKalmanFilter(init_state, init_p, R, H, Q)
+    ekf = ExtendedKalmanFilter(init_state, init_p, R, H)
 
-    last_dt = data.iloc[0]['timestamp'] - MS2SEC
+    last_dt = data.iloc[0]['timestamp'] - 10000
 
     os.makedirs('../out', exist_ok=True)
     logger = open('../out/log_{}.txt'.format(np.floor(time.time()).astype(int)), 'w')
@@ -71,23 +72,26 @@ def main():
     for i, data_line in enumerate(data.iterrows()):
         meas, gt, time_stamp = extractDataLine(data_line)
 
-        dt = (time_stamp - last_dt) / MS2MIN
+        dt = (time_stamp - last_dt)
         last_dt = time_stamp
 
         state, new_p = ekf.predict(dt)
         ekf.update(meas)
 
-        rmse = RMSE(state[:2], gt[:2])
-        error_log.append(rmse)
-        logger.write('{}:{:3f}\n'.format(i, rmse))
+        rmse = RMSE(state, gt)
+        error_log.append(np.square(state - gt))
+        logger.write('{}:{}\n'.format(i, rmse))
 
         if i % 5 == 0:
+            # Save logs
             logger.flush()
 
         updatePlot(gt, meas, state, rmse)
 
     logger.close()
-    print("Mean RMSE: {:3f}".format(np.array(error_log).mean()))
+    f_rmse = np.sqrt(np.array(error_log).mean(0))
+    print("RMSE: {}".format(f_rmse))
+    plt.title("RMSE x={:.3},y={:.3},vx={:.3},vy={:.3}".format(*f_rmse.flatten()))
     plt.show()
 
 
