@@ -306,6 +306,7 @@ def dispParticals(p, w, gt):
     plt.plot(m_x, m_y, 'yX')
     plt.plot(gt[0], gt[1], 'gX')
 
+    plt.legend(['LandMarks','Estimation','GT'],loc=2)
     plt.pause(.1)
 
 
