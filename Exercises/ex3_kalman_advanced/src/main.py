@@ -88,7 +88,7 @@ def main():
             # Save logs
             logger.flush()
 
-        updatePlot(gt, meas, state, rmse, False)
+        updatePlot(gt, meas, state, rmse, True)
 
     logger.close()
     error_log = np.array(est_log) - np.array(gt_log)
