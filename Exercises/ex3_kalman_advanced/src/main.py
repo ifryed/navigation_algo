@@ -63,33 +63,36 @@ def main():
 
     ekf = ExtendedKalmanFilter(init_state, init_p, R, H)
 
-    last_dt = data.iloc[0]['timestamp'] - 10000
+    last_dt = data.iloc[0]['timestamp']
 
     os.makedirs('../out', exist_ok=True)
     logger = open('../out/log_{}.txt'.format(np.floor(time.time()).astype(int)), 'w')
 
-    error_log = []
-    for i, data_line in enumerate(data.iterrows()):
+    est_log = []
+    gt_log = []
+    for i, data_line in enumerate(data.iloc[1:].iterrows()):
         meas, gt, time_stamp = extractDataLine(data_line)
 
-        dt = (time_stamp - last_dt)
+        dt = (time_stamp - last_dt) / 1000000
         last_dt = time_stamp
 
-        state, new_p = ekf.predict(dt)
-        ekf.update(meas)
+        ekf.predict(dt)
+        state, new_p = ekf.update(meas)
 
         rmse = RMSE(state, gt)
-        error_log.append(np.square(state - gt))
+        est_log.append(state)
+        gt_log.append(gt)
         logger.write('{}:{}\n'.format(i, rmse))
 
         if i % 5 == 0:
             # Save logs
             logger.flush()
 
-        updatePlot(gt, meas, state, rmse)
+        updatePlot(gt, meas, state, rmse, False)
 
     logger.close()
-    f_rmse = np.sqrt(np.array(error_log).mean(0))
+    error_log = np.array(est_log) - np.array(gt_log)
+    f_rmse = np.sqrt(np.square(error_log).mean(0))
     print("RMSE: {}".format(f_rmse))
     plt.title("RMSE x={:.3},y={:.3},vx={:.3},vy={:.3}".format(*f_rmse.flatten()))
     plt.show()

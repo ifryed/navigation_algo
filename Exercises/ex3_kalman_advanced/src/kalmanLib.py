@@ -8,6 +8,7 @@ class ExtendedKalmanFilter:
         self.R = R
         self.H = H
         self.I = np.eye(len(self.state))
+        self.last_acc = np.zeros((2,1))
 
     def _createFMatrix(self, dt: float) -> np.ndarray:
         f_mat = np.array([
@@ -32,21 +33,21 @@ class ExtendedKalmanFilter:
         ])
 
         Q = A.dot(P).dot(A.T)
-        return np.diag(np.diag(Q))
+        return Q
 
     def predict(self, dt: float) -> (np.ndarray, np.ndarray):
         f_mat = self._createFMatrix(dt)
-        last_v = self.state[:2]
         self.state = f_mat.dot(self.state)
 
-        ax, ay = self.state[2] - last_v
-        Q = self._computeConvMatrix(dt, ax[0], ay[0])
+        ax, ay = self.last_acc.flatten()
+        Q = self._computeConvMatrix(dt, ax, ay)
 
         self.P = f_mat.dot(self.P).dot(f_mat.T) + Q
 
         return self.state, self.P
 
     def update(self, measurment: np.ndarray) -> (np.ndarray, np.ndarray):
+        last_v = self.state[2:]
         K = self.P.dot(self.H.T).dot(
             np.linalg.pinv(
                 self.H.dot(self.P.dot(self.H.T)) + self.R
@@ -56,4 +57,5 @@ class ExtendedKalmanFilter:
         self.state = self.state + K.dot(measurment - self.H.dot(self.state))
         self.P = (self.I - K.dot(self.H)).dot(self.P)
 
+        self.last_acc = self.state[2:] - last_v
         return self.state, self.P
