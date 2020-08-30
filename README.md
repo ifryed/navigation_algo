@@ -5,6 +5,6 @@ This git follows the online course "Navigation Algorithms and Position Estimatio
 I will share my solutions to the online course mini-code questions in [Classes](https://github.com/ifryed/navigation_algo/tree/master/Classes)
 and the solution for each exercise in [Exercises](https://github.com/ifryed/navigation_algo/tree/master/Exercises).
 
-If you find any mistake feel free to contact me.
+If you find any mistakes, please feel free to contact me!
 
 Shai Aharon shai1.aharon@msmail.ariel.ac.il 
