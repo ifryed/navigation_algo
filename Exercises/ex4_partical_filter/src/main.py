@@ -371,7 +371,9 @@ def particle_filter(motions, measurements, N=500):  # I know it's tempting, but 
         # measurement update
         w = []
         for i in range(N):
-            # w.append(p[i].measurement_prob(measurements[t]))
+            p[i].running_weight = p[i].measurement_prob(measurements[t])
+            # w.append(p[i].running_weight)
+            # Adding weight averaging over time
             w.append(p[i].getWeight(measurements[t]))
 
         # resampling
@@ -387,6 +389,7 @@ def particle_filter(motions, measurements, N=500):  # I know it's tempting, but 
             p3.append(p[index].copy())
         p = p3
 
+        # Adding Randomness to avoid "Robot Disappearing"
         for rob_i in p[-int(len(p) * .1):]:
             rob_i.randomize()
 
