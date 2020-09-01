@@ -59,7 +59,7 @@ landmarks = np.array([
     [100.0, 0.0],
     [100.0, 100.0],
 ])  # position of 4 landmarks in (y, x) format.
-world_size = 100.0  # world is NOT cyclic. Robot is allowed to travel "out of bounds"
+world_size = np.array(landmarks).max()  # world is NOT cyclic. Robot is allowed to travel "out of bounds"
 
 
 # ------------------------------------------------
@@ -82,6 +82,35 @@ class robot:
         self.bearing_noise = 0.0  # initialize bearing noise to zero
         self.steering_noise = 0.0  # initialize steering noise to zero
         self.distance_noise = 0.0  # initialize distance noise to zero
+
+        self.running_weight = np.float64(0.0)
+
+    def copy(self):
+        n_robot = robot()
+        n_robot.x = self.x
+        n_robot.y = self.y
+        n_robot.length = self.length
+
+        n_robot.bearing_noise = self.bearing_noise
+        n_robot.steering_noise = self.steering_noise
+        n_robot.distance_noise = self.distance_noise
+
+        n_robot.orientation = self.orientation
+        n_robot.running_weight = self.running_weight
+
+        return n_robot
+
+    def randomize(self):
+        self.x = random.random() * world_size  # initial x position
+        self.y = random.random() * world_size  # initial y position
+        self.orientation = random.random() * 2.0 * pi  # initial orientation
+        self.running_weight = 0.0
+
+    def getWeight(self, new_measurement: np.ndarray) -> float:
+        alpha = .9
+        new_weight = self.measurement_prob(new_measurement)
+        self.running_weight = alpha * new_weight + (1 - alpha) * self.running_weight
+        return self.running_weight
 
     # --------
     # set:
@@ -112,7 +141,7 @@ class robot:
     #    computes the probability of a measurement
     #
 
-    def measurement_prob(self, measurements):
+    def measurement_prob(self, measurements: np.ndarray):
 
         # calculate the correct measurement
         predicted_measurements = self.sense(0)  # Our sense function took 0 as an argument to switch off noise.
@@ -185,7 +214,7 @@ class robot:
     def sense(self, hasNoise):  # do not change the name of this function
         Z = []
 
-        for i in range(4):
+        for i in range(len(landmarks)):
             y, x = landmarks[i]
             dx, dy = (x - self.x, y - self.y)
             teta = hasNoise * self.bearing_noise + atan2(dy, dx)
@@ -290,7 +319,8 @@ def check_output(final_robot, estimated_position):
     return correct
 
 
-def dispParticals(p, w, gt):
+def dispParticals(p: np.ndarray, w: np.ndarray,
+                  gt: np.ndarray, pause_time: float = 0.1):
     xs = np.array([r.x for r in p])
     ys = np.array([r.y for r in p])
 
@@ -306,8 +336,10 @@ def dispParticals(p, w, gt):
     plt.plot(m_x, m_y, 'yX')
     plt.plot(gt[0], gt[1], 'gX')
 
-    plt.legend(['LandMarks','Estimation','GT'],loc=2)
-    plt.pause(.1)
+    plt.legend(['LandMarks', 'Estimation', 'GT'], loc=2)
+    plt.xlim(-100, 200)
+    plt.ylim(-100, 200)
+    plt.pause(pause_time)
 
 
 def particle_filter(motions, measurements, N=500):  # I know it's tempting, but don't change N!
@@ -326,6 +358,8 @@ def particle_filter(motions, measurements, N=500):  # I know it's tempting, but 
     #
     # Update particles
     #
+    global g_meas
+    dispParticals(p, np.ones(len(p)), g_meas[0], 2)
     for t in range(len(motions)):
 
         # motion update (prediction)
@@ -337,7 +371,8 @@ def particle_filter(motions, measurements, N=500):  # I know it's tempting, but 
         # measurement update
         w = []
         for i in range(N):
-            w.append(p[i].measurement_prob(measurements[t]))
+            # w.append(p[i].measurement_prob(measurements[t]))
+            w.append(p[i].getWeight(measurements[t]))
 
         # resampling
         p3 = []
@@ -349,14 +384,18 @@ def particle_filter(motions, measurements, N=500):  # I know it's tempting, but 
             while beta > w[index]:
                 beta -= w[index]
                 index = (index + 1) % N
-            p3.append(p[index])
+            p3.append(p[index].copy())
         p = p3
+
+        for rob_i in p[-int(len(p) * .1):]:
+            rob_i.randomize()
 
         w = []
         for i in range(N):
-            w.append(p[i].measurement_prob(measurements[t]))
+            w.append(p[i].running_weight)
         w = np.array(w)
         w /= w.sum()
+
         dispParticals(p, w, g_meas[t])
     return get_position(p)
 
@@ -376,7 +415,7 @@ def particle_filter(motions, measurements, N=500):  # I know it's tempting, but 
 if __name__ == '__main__':
     number_of_iterations = 116
     motions = [[2. * pi / 20, 12.] for row in range(number_of_iterations)]
-    motions = [[np.random.random()*2. * pi, np.random.random()*20] for row in range(number_of_iterations)]
+    # motions = [[np.random.random() * 2. * pi, np.random.random() * 20] for row in range(number_of_iterations)]
 
     x = generate_ground_truth(motions)
     global g_meas
