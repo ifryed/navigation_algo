@@ -49,7 +49,6 @@ def findObservationProbability(closest_landmark, map_coordinates, sigmaX, sigmaY
     y = map_coordinates[1]
 
     denom = 1 / np.sqrt(sigmaX * sigmaY * 2 * np.pi)
-    frac = (1 / (2 * np.pi * sigmaX * sigmaY))
     weight1 = np.square((x - mew_x) / sigmaX) + np.square((y - mew_y) / sigmaY)
 
     ans = np.exp(-0.5 * weight1) * denom
