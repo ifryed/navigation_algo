@@ -5,6 +5,7 @@ import glob
 
 from src.ParticleLib import ParticleFilter
 from src.ParticleLib import utils as pUtils
+import matplotlib.pyplot as plt
 
 np.random.seed(14)
 
@@ -39,13 +40,25 @@ sigmaY = 0.3
 magicNumberOfParticles = 200
 
 
+def displaytrajectory(particles, bestP, gt, plot_all=True, disp=True):
+    prts = np.array([[p.x, p.y, p.weight] for p in particles])
+    prts[:, 2] /= prts[:, 2].sum()
+
+    if plot_all:
+        plt.scatter(prts[:, 0], prts[:, 1], c=prts[:, 2], cmap='gray', s=10)
+    plt.plot(gt[0], gt[1], 'g*')
+    plt.plot(bestP.x, bestP.y, 'c*')
+
+    if disp:
+        plt.pause(0.1)
+
+
 def main():
     observation, control_data, gt_data, landmarks = loadData()
-    particleFilter = ParticleFilter.ParticleFilter(0, 0, 0.6, numOfParticles=magicNumberOfParticles,
+    particleFilter = ParticleFilter.ParticleFilter(0, 0, .6, numOfParticles=magicNumberOfParticles,
                                                    landmarks=landmarks)
     # particleFilter = ParticleFilter.ParticleFilter(6.2785 ,1.9598 ,0.3, numOfParticles=magicNumberOfParticles,
     #                                                landmarks=landmarks)
-
     for i, obs in enumerate(observation):
         # prediction
         if i != 0:
@@ -58,6 +71,11 @@ def main():
         bestP = particleFilter.getBestParticle()
         error = pUtils.getError(gt_data.iloc[i], bestP)
         print(i, error)
+
+        displaytrajectory(particleFilter.particles, bestP, gt_data.iloc[i], i % 40 == 0, False)
+
+    plt.savefig('../results .png')
+    plt.show()
 
 
 if __name__ == '__main__':

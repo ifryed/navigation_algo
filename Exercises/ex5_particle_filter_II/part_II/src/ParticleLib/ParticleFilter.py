@@ -2,6 +2,8 @@ import random
 
 from ParticleLib.utils import *
 
+random.seed(42)
+
 
 class ParticleFilter:
     particles = []
