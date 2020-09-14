@@ -24,8 +24,6 @@ def calculateDistance(landmark1, landmark2):
 
 
 def findClosestLandmark(map_landmarks, singleObs):  # edited
-    # map_landmarks_arr = np.array([[lm.x, lm.y] for lm in map_landmarks])
-    # singleObs_arr = np.array([[singleObs.x, singleObs.y]])
     min_index = np.argmin((np.square((map_landmarks - singleObs)[:, :2]).sum(1)))
     closest_landmark = map_landmarks[min_index]
 
@@ -33,12 +31,11 @@ def findClosestLandmark(map_landmarks, singleObs):  # edited
 
 
 def getError(gt_data, bestParticle):
-    error1 = np.abs(gt_data[0] - bestParticle.x)
-    error2 = np.abs(gt_data[1] - bestParticle.y)
-    error3 = np.abs(gt_data[2] - bestParticle.theta)
-    if (error3 > 2 * np.pi):
+    error1, error2, error3 = np.abs(gt_data - bestParticle[:3])
+
+    if error3 > 2 * np.pi:
         error3 = 2 * np.pi - error3
-    return (error1, error2, error3)
+    return error1, error2, error3
 
 
 def findObservationProbability(closest_landmark, map_coordinates, sigmaX, sigmaY):
@@ -59,9 +56,9 @@ def mapObservationToMapCoordinates(observation, particle):
     x = observation[0]
     y = observation[1]
 
-    xt = particle.x
-    yt = particle.y
-    theta = particle.theta
+    xt = particle[0]
+    yt = particle[1]
+    theta = particle[2]
 
     MapX = x * np.cos(theta) - y * np.sin(theta) + xt
     MapY = x * np.sin(theta) + y * np.cos(theta) + yt
@@ -70,12 +67,9 @@ def mapObservationToMapCoordinates(observation, particle):
 
 
 def mapObservationsToMapCordinatesList(observations, particle):
-    convertedObservations = []
-    i = 0
-    for obs in observations.iterrows():
-        singleObs = obs[1]
+    convertedObservations = np.zeros((len(observations),3))
+    for i,singleObs in enumerate(observations):
         mapX, mapY = mapObservationToMapCoordinates(singleObs, particle)
-        tmpLandmark = np.array([mapX, mapY, i])
-        i += 1
-        convertedObservations.append(tmpLandmark)
-    return np.array(convertedObservations)
+        convertedObservations[i,:] = np.array([mapX, mapY, i])
+
+    return convertedObservations
