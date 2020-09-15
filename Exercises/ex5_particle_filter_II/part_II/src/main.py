@@ -57,8 +57,7 @@ def main():
     observation, control_data, gt_data, landmarks = loadData()
     particleFilter = ParticleFilter.ParticleFilter(0, 0, .6, numOfParticles=magicNumberOfParticles,
                                                    landmarks=landmarks)
-    # particleFilter = ParticleFilter.ParticleFilter(6.2785 ,1.9598 ,0.3, numOfParticles=magicNumberOfParticles,
-    #                                                landmarks=landmarks)
+
     for i, obs in enumerate(observation):
         # prediction
         if i != 0:

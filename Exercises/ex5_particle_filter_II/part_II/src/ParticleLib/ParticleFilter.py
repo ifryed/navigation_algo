@@ -63,20 +63,20 @@ class ParticleFilter:
         max_w_2 = w.max() * 2
 
         curr_ind = np.random.randint(0, self.number_of_particles)
-        new_particles_lst = []
-        for i in range(self.number_of_particles):
-            offset = np.random.random() * max_w_2
+        new_particles_lst = np.zeros((self.number_of_particles, 4))
+        rands = np.random.random(self.number_of_particles) * max_w_2
+        for i, rand_number in enumerate(rands):
+            offset = rand_number
 
             while offset > w[curr_ind]:
                 offset -= w[curr_ind]
                 curr_ind = (curr_ind + 1) % self.number_of_particles
 
-            new_particle = np.array([
+            new_particles_lst[i, :] = np.array([
                 self.particles[curr_ind, 0],
                 self.particles[curr_ind, 1],
                 self.particles[curr_ind, 2],
                 self.particles[curr_ind, 3]
             ])
-            new_particles_lst.append(new_particle)
 
         self.particles = np.array(new_particles_lst)
